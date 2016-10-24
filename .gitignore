@@ -5,3 +5,5 @@
 # IntelliJ
 /.idea
 /*.iml
+/*.ipr
+/*.iws

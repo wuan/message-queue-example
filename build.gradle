@@ -1,11 +1,20 @@
+plugins {
+    id "net.ltgt.apt" version "0.9"
+}
+
 apply plugin: 'java'
+apply plugin: 'net.ltgt.apt'
+apply plugin: 'idea'
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
-    compile 'org.slf4j:slf4j-api:1.7.21'
+    compile 'org.immutables:value:2.3.7'
 
     testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:2.2.7'
+    testCompile 'org.assertj:assertj-core:3.5.2'
+    testCompile 'org.awaitility:awaitility:2.0.0'
 }
