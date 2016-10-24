@@ -4,7 +4,9 @@ Simple example for a blocking message queue
 
 ## Usage
 
-### queue.offer(message) &mdash; add element to the queue
+### queue.offer(message)
+
+add element to the queue
 
 ```
     Message message = ImmutableMessage.builder()
@@ -17,7 +19,9 @@ Simple example for a blocking message queue
     messageQueue.offer(message);
 ```
 
-### queue.poll() &mdash; get element from the queue
+### queue.poll()
+
+get element from the queue
 
 ```
     Message message = messageQueue.poll();
@@ -25,7 +29,9 @@ Simple example for a blocking message queue
 
 This operation blocks if the queue is empty.
 
-### queue.deleteSpecific(what) &mdash; remove all elements from queue with have the given `what` value
+### queue.deleteSpecific(what)
+
+remove all elements from queue with have the given `what` value
 
 ```
     messageQueue.deleteSpecific(5);
