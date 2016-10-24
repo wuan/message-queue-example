@@ -42,3 +42,11 @@ remove all elements from queue with have the given `what` value
 ```
 
 This operation requires to iterate over all elements of the queue: O(n)
+
+## Build
+
+Run build with
+
+```
+> ./gradlew build
+```
