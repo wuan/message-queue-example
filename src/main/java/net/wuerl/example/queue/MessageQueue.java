@@ -1,24 +1,18 @@
 package net.wuerl.example.queue;
 
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 public class MessageQueue {
 
-    private volatile ModifiableNode head;
-
-    private volatile ModifiableNode tail;
+    private final MessageQueueOperations queueOperations;
 
     private final AtomicInteger count = new AtomicInteger();
 
     private final MessageQueueLocks locks;
-    public static final Supplier<IllegalStateException> SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER = () -> new IllegalStateException("should not happen");
-
 
     public MessageQueue() {
-        head = tail = ModifiableNode.create();
+        queueOperations = new MessageQueueOperations();
 
         locks = new MessageQueueLocks();
     }
@@ -36,7 +30,7 @@ public class MessageQueue {
 
         locks.lockOffer();
         try {
-            enqueue(message);
+            queueOperations.enqueue(message);
         } finally {
             locks.unlockOffer();
         }
@@ -45,14 +39,6 @@ public class MessageQueue {
             locks.signalNotEmpty();
         }
     }
-
-    private void enqueue(Message message) {
-        final ModifiableNode node = ModifiableNode.create().setMessage(message);
-
-        tail.setNext(node);
-        tail = node;
-    }
-
 
     /**
      * reads message from queue
@@ -70,7 +56,7 @@ public class MessageQueue {
             while (count.get() == 0) {
                 locks.awaitNotEmpty();
             }
-            message = dequeue();
+            message = queueOperations.dequeue();
         } finally {
             locks.unlockPoll();
         }
@@ -78,18 +64,6 @@ public class MessageQueue {
         count.decrementAndGet();
 
         return message;
-    }
-
-    private Message dequeue() {
-        ModifiableNode node = head;
-
-        head = node.next().orElseThrow(SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER);
-
-        Optional<Message> message = head.message();
-        head.setMessage(Optional.empty());
-        node.clear();
-
-        return message.orElseThrow(SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER);
     }
 
     /**
@@ -100,33 +74,10 @@ public class MessageQueue {
     public void deleteSpecific(int whatToDelete) {
         locks.lockAll();
         try {
-            Optional<ModifiableNode> node = Optional.of(head);
-
-            while (node.isPresent()) {
-                removeNextNodeIfApplicable(whatToDelete, node.get());
-
-                node = node.get().next();
-            }
+            queueOperations.deleteSpecific(whatToDelete);
         } finally {
             locks.unlockAll();
         }
-    }
-
-    private void removeNextNodeIfApplicable(int whatToDelete, final ModifiableNode node) {
-        node.next().ifPresent(
-            nextNode -> nextNode.message().ifPresent(
-                nextMessage -> {
-                    if (nextMessage.what() == whatToDelete) {
-                        skipNextNode(node, nextNode);
-                    }
-                }
-            )
-        );
-    }
-
-    private void skipNextNode(ModifiableNode node, ModifiableNode nextNode) {
-        node.setNext(nextNode.next());
-        nextNode.clear();
     }
 
 }
