@@ -3,31 +3,23 @@ package net.wuerl.example.queue;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 public class MessageQueue {
-
-    private final ReentrantLock pollLock;
-
-    private final Condition notEmpty;
-
-    private final ReentrantLock offerLock;
-
-    private final AtomicInteger count = new AtomicInteger();
 
     private volatile ModifiableNode head;
 
     private volatile ModifiableNode tail;
 
+    private final AtomicInteger count = new AtomicInteger();
+
+    private final MessageQueueLocks locks;
+
+
     public MessageQueue() {
         head = tail = ModifiableNode.create();
 
-        pollLock = new ReentrantLock(true);
-        notEmpty = pollLock.newCondition();
-
-        offerLock = new ReentrantLock(true);
+        locks = new MessageQueueLocks();
     }
 
     boolean isEmpty() {
@@ -41,15 +33,15 @@ public class MessageQueue {
      */
     public void offer(Message message) {
 
-        offerLock.lock();
+        locks.lockOffer();
         try {
             enqueue(message);
         } finally {
-            offerLock.unlock();
+            locks.unlockOffer();
         }
 
         if (count.incrementAndGet() == 1) {
-            signalNotEmpty();
+            locks.signalNotEmpty();
         }
     }
 
@@ -60,14 +52,6 @@ public class MessageQueue {
         tail = node;
     }
 
-    private void signalNotEmpty() {
-        pollLock.lock();
-        try {
-            notEmpty.signal();
-        } finally {
-            pollLock.unlock();
-        }
-    }
 
     /**
      * reads message from queue
@@ -79,36 +63,20 @@ public class MessageQueue {
     public Message poll() {
         final Message message;
 
-        lockPollLockInterruptibly();
+        locks.lockPollLockInterruptibly();
 
         try {
             while (count.get() == 0) {
-                awaitNotEmpty();
+                locks.awaitNotEmpty();
             }
             message = dequeue();
         } finally {
-            pollLock.unlock();
+            locks.unlockPoll();
         }
 
         count.decrementAndGet();
 
         return message;
-    }
-
-    private void lockPollLockInterruptibly() {
-        try {
-            pollLock.lockInterruptibly();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void awaitNotEmpty() {
-        try {
-            notEmpty.await();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private Message dequeue() {
@@ -130,7 +98,7 @@ public class MessageQueue {
      * @param whatToDelete value of what for which messages should be deleted
      */
     public void deleteSpecific(int whatToDelete) {
-        lockQueue();
+        locks.lockAll();
         try {
             Optional<ModifiableNode> node = Optional.of(head);
 
@@ -140,7 +108,7 @@ public class MessageQueue {
                 node = node.get().next();
             }
         } finally {
-            unlockQueue();
+            locks.unlockAll();
         }
     }
 
@@ -161,13 +129,4 @@ public class MessageQueue {
         nextNode.clear();
     }
 
-    private void lockQueue() {
-        offerLock.lock();
-        pollLock.lock();
-    }
-
-    private void unlockQueue() {
-        offerLock.lock();
-        pollLock.lock();
-    }
 }

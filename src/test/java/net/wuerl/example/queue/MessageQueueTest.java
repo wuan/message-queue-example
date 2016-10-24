@@ -128,6 +128,11 @@ public class MessageQueueTest {
     }
 
     private ImmutableMessage createMessage(int what) {
-        return ImmutableMessage.builder().what(what).arg1(0).arg2(0).obj(new Object()).build();
+        return ImmutableMessage.builder()
+            .what(what)
+            .arg1(0)
+            .arg2(0)
+            .obj(new Object())
+            .build();
     }
 }
