@@ -19,6 +19,8 @@ add element to the queue
     messageQueue.offer(message);
 ```
 
+Adding an element to the queue is independent of the size of the queue: O(1)
+
 ### queue.poll()
 
 get element from the queue
@@ -29,6 +31,8 @@ get element from the queue
 
 This operation blocks if the queue is empty.
 
+Removing an element from the queue is independent of the size of the queue: O(1)
+
 ### queue.deleteSpecific(what)
 
 remove all elements from queue with have the given `what` value
@@ -37,3 +41,4 @@ remove all elements from queue with have the given `what` value
     messageQueue.deleteSpecific(5);
 ```
 
+This operation requires to iterate over all elements of the queue: O(n)
