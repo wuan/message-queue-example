@@ -7,13 +7,12 @@ public class MessageQueue {
 
     private final MessageQueueOperations queueOperations;
 
-    private final AtomicInteger count = new AtomicInteger();
-
     private final MessageQueueLocks locks;
+
+    private final AtomicInteger count = new AtomicInteger();
 
     public MessageQueue() {
         queueOperations = new MessageQueueOperations();
-
         locks = new MessageQueueLocks();
     }
 
