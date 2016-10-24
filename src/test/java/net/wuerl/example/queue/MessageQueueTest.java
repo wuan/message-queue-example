@@ -6,7 +6,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -91,6 +94,23 @@ public class MessageQueueTest {
         await().atLeast(400, TimeUnit.MILLISECONDS).until(() -> assertThat(messageQueue.poll()).isEqualTo(message1));
     }
 
+    @Test
+    public void simpleConcurrencyTest() {
+        IntStream.range(0, 20).forEach(index ->
+                runInThread(() -> {
+                    final Message message1 = createMessage(index);
+                    IntStream.range(0, 10000).forEach(ignore -> messageQueue.offer(message1));
+                }));
+
+        final Map<Integer, Long> results = IntStream.range(0, 200000)
+                .mapToObj(ignore -> messageQueue.poll().what())
+                .collect(Collectors.groupingBy(what -> what, Collectors.counting()));
+
+        assertThat(results.keySet()).containsExactly(IntStream.range(0, 20).mapToObj(Integer::valueOf).toArray(Integer[]::new));
+        assertThat(results.values()).containsExactly(IntStream.range(0, 20).mapToObj(ignore -> 10000L).toArray(Long[]::new));
+        assertThat(messageQueue.isEmpty()).isTrue();
+    }
+
     private void sleep(int millis) {
         try {
             Thread.sleep(millis);
@@ -129,10 +149,10 @@ public class MessageQueueTest {
 
     private ImmutableMessage createMessage(int what) {
         return ImmutableMessage.builder()
-            .what(what)
-            .arg1(0)
-            .arg2(0)
-            .obj(new Object())
-            .build();
+                .what(what)
+                .arg1(0)
+                .arg2(0)
+                .obj(new Object())
+                .build();
     }
 }
