@@ -96,18 +96,23 @@ public class MessageQueueTest {
 
     @Test
     public void simpleConcurrencyTest() {
-        IntStream.range(0, 20).forEach(index ->
+        final int numberOfParallelThreads = 50;
+        final int numberOfMessagesPerThread = 1000;
+
+        IntStream.range(0, numberOfParallelThreads).forEach(index ->
                 runInThread(() -> {
-                    final Message message1 = createMessage(index);
-                    IntStream.range(0, 10000).forEach(ignore -> messageQueue.offer(message1));
+                    final Message message = createMessage(index);
+                    IntStream.range(0, numberOfMessagesPerThread).forEach(ignore -> messageQueue.offer(message));
                 }));
 
-        final Map<Integer, Long> results = IntStream.range(0, 200000)
-                .mapToObj(ignore -> messageQueue.poll().what())
-                .collect(Collectors.groupingBy(what -> what, Collectors.counting()));
+        final ResultRunner resultRunner = new ResultRunner(messageQueue, numberOfParallelThreads * numberOfMessagesPerThread);
 
-        assertThat(results.keySet()).containsExactly(IntStream.range(0, 20).mapToObj(Integer::valueOf).toArray(Integer[]::new));
-        assertThat(results.values()).containsExactly(IntStream.range(0, 20).mapToObj(ignore -> 10000L).toArray(Long[]::new));
+        await().with().timeout(5, TimeUnit.SECONDS).until(resultRunner);
+
+        final Map<Integer, Long> results = resultRunner.results;
+
+        assertThat(results.keySet()).containsExactly(IntStream.range(0, numberOfParallelThreads).mapToObj(Integer::valueOf).toArray(Integer[]::new));
+        assertThat(results.values()).containsExactly(IntStream.range(0, numberOfParallelThreads).mapToObj(ignore -> (long) numberOfMessagesPerThread).toArray(Long[]::new));
         assertThat(messageQueue.isEmpty()).isTrue();
     }
 
@@ -154,5 +159,23 @@ public class MessageQueueTest {
                 .arg2(0)
                 .obj(new Object())
                 .build();
+    }
+
+    static class ResultRunner implements Runnable {
+        private final MessageQueue messageQueue;
+        private final Integer totalNumber;
+        Map<Integer, Long> results;
+
+        public ResultRunner(MessageQueue messageQueue, Integer totalNumber) {
+            this.messageQueue = messageQueue;
+            this.totalNumber = totalNumber;
+        }
+
+        @Override
+        public void run() {
+            results = IntStream.range(0, totalNumber)
+                    .mapToObj(ignore -> messageQueue.poll().what())
+                    .collect(Collectors.groupingBy(what -> what, Collectors.counting()));
+        }
     }
 }

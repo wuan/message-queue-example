@@ -14,6 +14,7 @@ public class MessageQueue {
     private final AtomicInteger count = new AtomicInteger();
 
     private final MessageQueueLocks locks;
+    public static final Supplier<IllegalStateException> SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER = () -> new IllegalStateException("should not happen");
 
 
     public MessageQueue() {
@@ -81,15 +82,14 @@ public class MessageQueue {
 
     private Message dequeue() {
         ModifiableNode node = head;
-        Supplier<IllegalStateException> shouldNotHappen = () -> new IllegalStateException("should not happen");
 
-        head = node.next().orElseThrow(shouldNotHappen);
+        head = node.next().orElseThrow(SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER);
 
         Optional<Message> message = head.message();
         head.setMessage(Optional.empty());
         node.clear();
 
-        return message.orElseThrow(shouldNotHappen);
+        return message.orElseThrow(SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER);
     }
 
     /**
