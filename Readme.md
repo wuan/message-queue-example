@@ -21,6 +21,16 @@ add element to the queue
 
 Adding an element to the queue is independent of the size of the queue: O(1)
 
+### queue.peek()
+
+preview of first element of queue
+
+```
+    Optional<Message> message = messageQueue.peek();
+```
+
+The result is empty, if the queue is empty.
+
 ### queue.poll()
 
 get element from the queue
