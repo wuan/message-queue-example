@@ -1,6 +1,7 @@
 package net.wuerl.example.queue;
 
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageQueue {
@@ -63,6 +64,15 @@ public class MessageQueue {
         count.decrementAndGet();
 
         return message;
+    }
+
+    /**
+     * previews next available message from queue
+     *
+     * @return first element from queue or empty if there is nothing
+     */
+    public Optional<Message> peek() {
+        return queueOperations.peek();
     }
 
     /**

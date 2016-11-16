@@ -3,14 +3,14 @@ package net.wuerl.example.queue;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class MessageQueueOperations {
-    public static final Supplier<IllegalStateException> SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER = () -> new IllegalStateException("should not happen");
+class MessageQueueOperations {
+    private static final Supplier<IllegalStateException> SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER = () -> new IllegalStateException("should not happen");
 
     private volatile ModifiableNode head;
 
     private volatile ModifiableNode tail;
 
-    public MessageQueueOperations() {
+    MessageQueueOperations() {
         head = tail = ModifiableNode.create();
     }
 
@@ -31,6 +31,10 @@ public class MessageQueueOperations {
         node.clear();
 
         return message.orElseThrow(SHOULD_NOT_HAPPEN_EXCEPTION_SUPPLIER);
+    }
+
+    Optional<Message> peek() {
+        return head.next().flatMap(ModifiableNode::message);
     }
 
     void deleteSpecific(int whatToDelete) {

@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -34,12 +35,6 @@ public class MessageQueueTest {
         messageQueue.offer(createMessage(1));
 
         assertThat(messageQueue.isEmpty()).isFalse();
-    }
-
-    @Test
-    @Ignore
-    public void emptyQueueReturnsEmptyMessage() throws Exception {
-        messageQueue.poll();
     }
 
     @Test
@@ -87,11 +82,11 @@ public class MessageQueueTest {
         final Message message1 = createMessage(1);
 
         runInThread(() -> {
-            sleep(500);
+            sleep(1000);
             messageQueue.offer(message1);
         });
 
-        await().atLeast(400, TimeUnit.MILLISECONDS).until(() -> assertThat(messageQueue.poll()).isEqualTo(message1));
+        await().atLeast(750, TimeUnit.MILLISECONDS).until(() -> assertThat(messageQueue.poll()).isEqualTo(message1));
     }
 
     @Test
@@ -146,6 +141,21 @@ public class MessageQueueTest {
 
         assertThat(messageQueue.poll().what()).isEqualTo(1);
         assertThat(messageQueue.poll().what()).isEqualTo(2);
+    }
+
+    @Test
+    public void peekShouldReturnEmptyWithEmptyQueue() {
+        assertThat(messageQueue.peek()).isNotPresent();
+    }
+
+    @Test
+    public void peekShouldReturnHeadElement() {
+        messageQueue.offer(createMessage(1));
+        messageQueue.offer(createMessage(2));
+
+        Optional<Message> headElement = messageQueue.peek();
+        assertThat(headElement).isPresent();
+        assertThat(headElement.get().what()).isEqualTo(1);
     }
 
     private void runInThread(Runnable runnable) {
