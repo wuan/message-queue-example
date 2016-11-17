@@ -17,4 +17,6 @@ dependencies {
     testCompile 'org.mockito:mockito-core:2.2.7'
     testCompile 'org.assertj:assertj-core:3.5.2'
     testCompile 'org.awaitility:awaitility:2.0.0'
+    testCompile group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.+'
+    testCompile group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.+'
 }
