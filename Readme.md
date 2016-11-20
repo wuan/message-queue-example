@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/wuan/message-queue-example.svg?branch=master)](https://travis-ci.org/wuan/message-queue-example)
+[![Coverage Status](https://coveralls.io/repos/github/wuan/message-queue-example/badge.svg?branch=master)](https://coveralls.io/github/wuan/message-queue-example?branch=master)
+
 # message-queue-example
 
 Simple example for a blocking message queue
