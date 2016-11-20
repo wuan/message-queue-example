@@ -1,5 +1,7 @@
 plugins {
     id "net.ltgt.apt" version "0.9"
+    id 'net.saliman.cobertura' version '2.3.1'
+    id 'com.github.kt3k.coveralls' version '2.6.3'
 }
 
 apply plugin: 'java'
