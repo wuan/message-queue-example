@@ -1,8 +1,8 @@
 plugins {
     id 'java'
     id 'idea'
+    id 'jacoco'
     id "net.ltgt.apt" version "0.9"
-    id 'net.saliman.cobertura' version '2.3.2'
     id 'com.github.kt3k.coveralls' version '2.7.1'
 }
 
@@ -21,5 +21,14 @@ dependencies {
     testCompile group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.+'
 }
 
-cobertura.coverageFormats = ['html', 'xml'] // coveralls plugin depends on xml format report
+compileJava {
+    sourceCompatibility = '1.8'
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
+}
 
