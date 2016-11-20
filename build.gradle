@@ -4,6 +4,8 @@ plugins {
     id 'com.github.kt3k.coveralls' version '2.6.3'
 }
 
+cobertura.coverageFormats = ['html', 'xml'] // coveralls plugin depends on xml format report
+
 apply plugin: 'java'
 apply plugin: 'net.ltgt.apt'
 apply plugin: 'idea'
