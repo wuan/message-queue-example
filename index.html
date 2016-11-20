@@ -1,50 +1,232 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+    <title>MessageQueue in Java</title>
 
-		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/black.css">
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/black.css">
 
-		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="lib/css/zenburn.css">
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
 
-		<!-- Printing and PDF exports -->
-		<script>
-			var link = document.createElement( 'link' );
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
-			document.getElementsByTagName( 'head' )[0].appendChild( link );
-		</script>
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
-			</div>
-		</div>
+    <!-- Printing and PDF exports -->
+    <script>
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = window.location.search.match(/print-pdf/gi) ? 'css/print/pdf.css' : 'css/print/paper.css';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    </script>
+</head>
+<body>
 
-		<script src="lib/js/head.min.js"></script>
-		<script src="js/reveal.js"></script>
+<div class="i18n">
+    <span class="section-overview">Overview</span>
+</div>
 
-		<script>
-			// More info https://github.com/hakimel/reveal.js#configuration
-			Reveal.initialize({
-				history: true,
+<div class="reveal">
+    <div class="slides">
+        <section>
+            <h1>Message-Queue</h1>
+            <h3>a blocking queue in Java</h3>
+            <p style="padding-top:15%">
+                Andreas Würl
+            </p>
+        </section>
 
-				// More info https://github.com/hakimel/reveal.js#dependencies
-				dependencies: [
-					{ src: 'plugin/markdown/marked.js' },
-					{ src: 'plugin/markdown/markdown.js' },
-					{ src: 'plugin/notes/notes.js', async: true },
-					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
-				]
-			});
-		</script>
-	</body>
+        <section data-title="Introduction">
+            <section>
+                <h2>Requirements</h2>
+                <ul>
+                    <li>operations
+                        <ul>
+                            <li>enqueue element: <code>offer(Message)</code></li>
+                            <li>dequeue element: <code>poll()</code></li>
+                            <li>get first element: <code>peek()</code></li>
+                            <li>remove specified elements: <code>deleteSpecific(int)</code></li>
+                        </ul>
+                    </li>
+                    <li>message format
+                        <pre><code>class Message {
+  int what;
+  int arg1;
+  int arg2;
+  Object obj;
+}</code></pre>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Motivation</h2>
+
+                <ul class="no-burn">
+                    <li>Since Java 7: java.util.concurrent.BlockingQueue</li>
+                    <li>with some implementations</li>
+                    <li>but nothing like <code>deleteSpecific()</code></li>
+                    <li>&rarr; implement from scratch</li>
+                </ul>
+            </section>
+        </section>
+
+        <section data-title="Implementation">
+            <section>
+                <h2>Non functioncal requirements</h2>
+                <ul>
+                    <li>fast queue and dequeue operations</li>
+                    <li>independent queue and dequeue operations</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>How to store the data?</h2>
+                <ul>
+                    <li>Linked List?
+                        <ul>
+                            <li>enqueue operates on tail</li>
+                            <li>dequeue operates on head</li>
+                            <li>remove iterates over elements</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Linked List &mdash; empty</h2>
+                <img src="img/queue_empty.png"/>
+            </section>
+
+            <section>
+                <h2>Linked List &mdash; offer(1)</h2>
+                <img src="img/queue_offer_1.png"/>
+            </section>
+
+            <section>
+                <h2>Linked List &mdash; offer(2)</h2>
+                <img src="img/queue_offer_2.png"/>
+            </section>
+
+            <section>
+                <h2>Linked List &mdash; poll()</h2>
+                <img src="img/queue_poll.png"/>
+            </section>
+
+            <section>
+                <h2>Concurrency</h2>
+                <ul>
+                    <li>seperate locks
+                        <ul>
+                            <li>enqueue locks tail</li>
+                            <li>dequeue locks head</li>
+                        </ul>
+                    </li>
+                    <li>remove requires locking both</li>
+                    <li>peek should require no locks</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Blocking mechanics</h2>
+                <ul>
+                    <li>poll() on empty queue should block:
+                        <pre><code>while (count.get() == 0) {
+    locks.awaitNotEmpty();
+}
+message = queueOperations.dequeue();</code></pre>
+                    </li>
+                    <li>a <code>Condition</code> should help here
+                        <ul>
+                            <li>"wait until notified by another thread"</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Design of MessageQueue</h2>
+
+                <ul>
+                    <li>lock and queue operation can be separated and reused:
+                        <ul>
+                            <li><code>MessageQueue</code>
+                                <ul>
+                                    <li><code>MessageQueueLocks</code></li>
+                                    <li><code>MessageQueueOperations</code></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><a href="https://immutables.github.io/">Immutables</a> is used to avoid boilerplate data classes
+                        <ul>
+                            <li><code>Message</code> immutable</li>
+                            <li><code>Node</code> mutable</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+        </section>
+
+        <section data-title="Benchmarks">
+            <section>
+                <h2>some Benchmarks</h2>
+                <table>
+                    <tr>
+                        <td></td>
+                        <td>MessageQueue</td>
+                        <td>vs.</td>
+                        <td>LinkedBlockingQueue</td>
+                    </tr>
+                    <tr>
+                        <td>offer</td>
+                        <td>181%</td>
+                        <td>81%</td>
+                        <td>223%</td>
+                    </tr>
+                    <tr>
+                        <td>offer + poll</td>
+                        <td>103%</td>
+                        <td>84%</td>
+                        <td>122%</td>
+                    </tr>
+                    <tr>
+                        <td>offer + peek + poll</td>
+                        <td>100%</td>
+                        <td>95%</td>
+                        <td>105%</td>
+                    </tr>
+                </table>
+            </section>
+        </section>
+
+        <section>
+            <h1>Thank You!</h1>
+        </section>
+    </div>
+</div>
+
+<script src="lib/js/head.min.js"></script>
+<script src="js/reveal.js"></script>
+
+<script>
+    // More info https://github.com/hakimel/reveal.js#configuration
+    Reveal.initialize({
+        history: true,
+
+        // More info https://github.com/hakimel/reveal.js#dependencies
+        dependencies: [
+            {src: 'plugin/markdown/marked.js'},
+            {src: 'plugin/markdown/markdown.js'},
+            {src: 'plugin/notes/notes.js', async: true},
+            {
+                src: 'plugin/highlight/highlight.js', async: true, callback: function () {
+                hljs.initHighlightingOnLoad();
+            }
+            }
+        ]
+    });
+</script>
+</body>
 </html>
