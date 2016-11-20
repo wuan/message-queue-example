@@ -29,13 +29,15 @@ public class MessageQueue {
     public void offer(Message message) {
 
         locks.lockOffer();
+        final int currentCount;
         try {
             queueOperations.enqueue(message);
         } finally {
+            currentCount = count.incrementAndGet();
             locks.unlockOffer();
         }
 
-        if (count.incrementAndGet() == 1) {
+        if (currentCount == 1) {
             locks.signalNotEmpty();
         }
     }
@@ -58,10 +60,9 @@ public class MessageQueue {
             }
             message = queueOperations.dequeue();
         } finally {
+            count.decrementAndGet();
             locks.unlockPoll();
         }
-
-        count.decrementAndGet();
 
         return message;
     }
