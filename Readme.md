@@ -2,6 +2,8 @@
 
 Simple example for a blocking message queue
 
+Overview: https://wuan.github.io/message-queue-example
+
 ## Usage
 
 ### queue.offer(message)
